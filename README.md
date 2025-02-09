@@ -256,9 +256,17 @@ Deploy Flask application on Azure Kubernetes Service (AKS) using Terraform and A
 
 2. Results: 
 
+- Static code analysis results 
+
+    ![alt text](image-1.png)
+
+- Trivy scan results 
+
+    ![alt text](image-2.png)
+
+- Pipeline results 
 
     ![alt text](image.png)
-
 
     
 
@@ -274,3 +282,4 @@ Deploy Flask application on Azure Kubernetes Service (AKS) using Terraform and A
 - terraform destroy
 - az group delete --name aks-rg
 ```
+
