@@ -264,6 +264,10 @@ Deploy Flask application on Azure Kubernetes Service (AKS) using Terraform and A
 
     ![alt text](image-3.png)
 
+- Deploy to AKS results 
+
+    ![alt text](image-4.png)
+
 - Pipeline results 
 
     ![alt text](image.png)
