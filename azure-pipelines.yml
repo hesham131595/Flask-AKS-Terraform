@@ -1,0 +1,92 @@
+trigger:
+- main
+
+pool:
+  vmImage: 'ubuntu-latest'
+  # name: self-pool
+
+variables:
+  IMAGE_NAME: 'flask-app'
+  IMAGE_TAG: '$(Build.BuildId)'
+  ACR_NAME: 'askregistery' 
+  PIP_CACHE_DIR: $(Pipeline.Workspace)/pip_cache
+
+
+stages:
+- stage: DependencyCache
+  displayName: Cache and Install Python Dependencies
+  jobs:
+  - job: CacheDependencies
+    displayName: Cache Python Dependencies
+    steps:
+    # Step 1: Restore Cache
+    - task: Cache@2
+      inputs:
+        key: 'python | "$(Agent.OS)" | microservices/requirements.txt'
+        path: $(PIP_CACHE_DIR)
+        restoreKeys: |
+          python | "$(Agent.OS)"
+    
+    # Step 2: Install Dependencies Using Cache
+    - script: |
+        sudo apt update
+        sudo apt install -y python3 python3-pip
+        python3 -m pip install --upgrade pip
+        python3 -m pip install --cache-dir=$(PIP_CACHE_DIR) -r microservices/requirements.txt
+      displayName: Install Python Dependencies
+
+- stage: CodeAnalysis
+  displayName: Static Code Analysis
+  dependsOn: DependencyCache
+  jobs:
+  - job: StaticAnalysis
+    displayName: Run Static Code Analysis
+    steps:
+    # Step 1: Run Bandit for Static Code Analysis
+    - script: |
+        python3 -m pip install --user bandit
+        export PATH=$PATH:$HOME/.local/bin
+        bandit -r microservices/app/
+      displayName: Bandit Scan for Static Code Analysis   
+
+- stage: BuildDockerImage
+  displayName: Build Docker Image
+  jobs:
+  - job: BuildImage
+    displayName: Build and Push Docker Image
+    steps:
+    - task: Docker@2
+      inputs:
+        containerRegistry: 'acrconnection1'
+        repository: '$(IMAGE_NAME)'
+        command: 'buildAndPush'
+        Dockerfile: '**/Dockerfile'
+        tags: |
+          $(IMAGE_TAG)
+- stage: Security
+  jobs:
+  - job: ContainerScan
+    displayName: Run Trivy Scan
+    steps:
+    - script: |
+        curl -sfL https://raw.githubusercontent.com/aquasecurity/trivy/main/contrib/install.sh | sh
+        ./bin/trivy image --severity CRITICAL,HIGH --exit-code 1 $(ACR_NAME).azurecr.io/$(IMAGE_NAME):$(IMAGE_TAG)
+      displayName: Trivy Scan for Vulnerabilities
+
+- stage: DeployToK8s
+  displayName: Deploy to AKS
+  jobs:
+  - job: UpdateDeployment
+    displayName: Update Deployment Image in Kubernetes
+    steps:
+    - task: Kubernetes@1
+      displayName: Update Deployment Image
+      inputs:
+        connectionType: 'Azure Resource Manager'
+        azureSubscriptionEndpoint: 'azure-connection'
+        azureResourceGroup: 'aks-rg'
+        kubernetesCluster: 'tf-cluster'
+        namespace: 'flask-app'
+        command: 'set'
+        arguments: 'image deployment/flask-app flask-app=$(ACR_NAME).azurecr.io/$(IMAGE_NAME):$(IMAGE_TAG)'
+    

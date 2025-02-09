@@ -1,0 +1,38 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: flask-app
+  labels:
+    app: flask-app
+spec:
+  replicas: 3
+  selector:
+    matchLabels:
+      app: flask-app
+  template:
+    metadata:
+      namespace: flask-app-namespace
+      labels:
+        app: flask-app
+    spec:
+      affinity:
+        nodeAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+            nodeSelectorTerms:
+            - matchExpressions:
+              - key: app
+                operator: In
+                values:
+                - apps
+      containers:
+      - name: flask-app
+        image: askregistery.azurecr.io/flask-app:latest # Replace with your Docker image name
+        ports:
+        - containerPort: 5000
+        resources:
+          requests:
+            memory: "256Mi" # Minimum memory required for your Flask app
+            cpu: "100m"     # Minimum CPU required
+          limits:
+            memory: "512Mi" # Maximum memory the app is allowed to consume
+            cpu: "500m"     # Maximum CPU the app can use
