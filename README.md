@@ -1,5 +1,5 @@
-# Flask-AKS-Terraform
-Deploy Flask application on Azure Kubernetes Service (AKS) using Terraform and Azure DevOps
+# Flask-AKS-Terraform-AzureDevOps-Pipeline
+Deploy Flask application on Azure Kubernetes Service (AKS) using Terraform and use Azure DevOps to automate build and deployment process on (AKS)
 
 ## Architecture
 - Flask microservices application
