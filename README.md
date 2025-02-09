@@ -262,7 +262,7 @@ Deploy Flask application on Azure Kubernetes Service (AKS) using Terraform and A
 
 - Trivy scan results 
 
-    ![alt text](image-2.png)
+    ![alt text](image-3.png)
 
 - Pipeline results 
 
